@@ -550,8 +550,9 @@ class TestTypeConversionDict:
         assert d.get("foo", type=int) == 1
 
     def test_return_default_when_conversion_is_not_possible(self):
-        d = self.storage_class(foo="bar")
+        d = self.storage_class(foo="bar", baz=None)
         assert d.get("foo", default=-1, type=int) == -1
+        assert d.get("baz", default=-1, type=int) == -1
 
     def test_propagate_exceptions_in_conversion(self):
         d = self.storage_class(foo="bar")
@@ -951,6 +952,38 @@ class TestCacheControl:
         assert cc.no_cache is None
         cc.no_cache = False
         assert cc.no_cache is False
+
+    def test_no_transform(self):
+        cc = ds.RequestCacheControl([("no-transform", None)])
+        assert cc.no_transform is True
+        cc = ds.RequestCacheControl()
+        assert cc.no_transform is False
+
+    def test_min_fresh(self):
+        cc = ds.RequestCacheControl([("min-fresh", "0")])
+        assert cc.min_fresh == 0
+        cc = ds.RequestCacheControl([("min-fresh", None)])
+        assert cc.min_fresh is None
+        cc = ds.RequestCacheControl()
+        assert cc.min_fresh is None
+
+    def test_must_understand(self):
+        cc = ds.ResponseCacheControl([("must-understand", None)])
+        assert cc.must_understand is True
+        cc = ds.ResponseCacheControl()
+        assert cc.must_understand is False
+
+    def test_stale_while_revalidate(self):
+        cc = ds.ResponseCacheControl([("stale-while-revalidate", "1")])
+        assert cc.stale_while_revalidate == 1
+        cc = ds.ResponseCacheControl()
+        assert cc.stale_while_revalidate is None
+
+    def test_stale_if_error(self):
+        cc = ds.ResponseCacheControl([("stale-if-error", "1")])
+        assert cc.stale_if_error == 1
+        cc = ds.ResponseCacheControl()
+        assert cc.stale_while_revalidate is None
 
 
 class TestContentSecurityPolicy:

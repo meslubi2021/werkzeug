@@ -1,7 +1,6 @@
 pytest
 pytest-timeout
-pytest-xprocess
 cryptography
-greenlet ; python_version < "3.11"
 watchdog
 ephemeral-port-reserve
+cffi

@@ -7,6 +7,7 @@ from markupsafe import Markup
 from werkzeug import exceptions
 from werkzeug.datastructures import Headers
 from werkzeug.datastructures import WWWAuthenticate
+from werkzeug.exceptions import default_exceptions
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
@@ -36,6 +37,7 @@ def test_proxy_exception():
         (exceptions.RequestEntityTooLarge, 413),
         (exceptions.RequestURITooLarge, 414),
         (exceptions.UnsupportedMediaType, 415),
+        (exceptions.MisdirectedRequest, 421),
         (exceptions.UnprocessableEntity, 422),
         (exceptions.Locked, 423),
         (exceptions.InternalServerError, 500),
@@ -138,7 +140,7 @@ def test_retry_after_mixin(cls, value, expect):
 @pytest.mark.parametrize(
     "cls",
     sorted(
-        (e for e in HTTPException.__subclasses__() if e.code and e.code >= 400),
+        (e for e in default_exceptions.values() if e.code and e.code >= 400),
         key=lambda e: e.code,  # type: ignore
     ),
 )
@@ -158,7 +160,7 @@ def test_description_none():
 @pytest.mark.parametrize(
     "cls",
     sorted(
-        (e for e in HTTPException.__subclasses__() if e.code),
+        (e for e in default_exceptions.values() if e.code),
         key=lambda e: e.code,  # type: ignore
     ),
 )

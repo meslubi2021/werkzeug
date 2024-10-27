@@ -122,12 +122,20 @@ class TestFormParser:
         req.max_form_parts = 1
         pytest.raises(RequestEntityTooLarge, lambda: req.form["foo"])
 
-    def test_x_www_urlencoded_max_form_parts(self):
+    def test_urlencoded_no_max(self) -> None:
         r = Request.from_values(method="POST", data={"a": 1, "b": 2})
         r.max_form_parts = 1
 
         assert r.form["a"] == "1"
         assert r.form["b"] == "2"
+
+    def test_urlencoded_silent_decode(self) -> None:
+        r = Request.from_values(
+            data=b"\x80",
+            content_type="application/x-www-form-urlencoded",
+            method="POST",
+        )
+        assert not r.form
 
     def test_missing_multipart_boundary(self):
         data = (
@@ -273,7 +281,7 @@ class TestMultiPart:
                 content_type=f'multipart/form-data; boundary="{boundary}"',
                 content_length=len(data),
             ) as response:
-                assert response.get_data() == repr(text).encode("utf-8")
+                assert response.get_data() == repr(text).encode()
 
     @pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
     def test_ie7_unc_path(self):
@@ -448,3 +456,15 @@ class TestMultiPartParser:
         ) as request:
             assert request.files["rfc2231"].filename == "a b c d e f.txt"
             assert request.files["rfc2231"].read() == b"file contents"
+
+
+def test_multipart_max_form_memory_size() -> None:
+    """max_form_memory_size is tracked across multiple data events."""
+    data = b"--bound\r\nContent-Disposition: form-field; name=a\r\n\r\n"
+    data += b"a" * 15 + b"\r\n--bound--"
+    # The buffer size is less than the max size, so multiple data events will be
+    # returned. The field size is greater than the max.
+    parser = formparser.MultiPartParser(max_form_memory_size=10, buffer_size=5)
+
+    with pytest.raises(RequestEntityTooLarge):
+        parser.parse(io.BytesIO(data), b"bound", None)

@@ -107,9 +107,16 @@ class TestHTTPUtility:
     def test_list_header(self, value, expect):
         assert http.parse_list_header(value) == expect
 
-    def test_dict_header(self):
-        d = http.parse_dict_header('foo="bar baz", blah=42')
-        assert d == {"foo": "bar baz", "blah": "42"}
+    @pytest.mark.parametrize(
+        ("value", "expect"),
+        [
+            ('foo="bar baz", blah=42', {"foo": "bar baz", "blah": "42"}),
+            ("foo, bar=", {"foo": None, "bar": ""}),
+            ("=foo, =", {}),
+        ],
+    )
+    def test_dict_header(self, value, expect):
+        assert http.parse_dict_header(value) == expect
 
     def test_cache_control_header(self):
         cc = http.parse_cache_control_header("max-age=0, no-cache")
@@ -203,6 +210,10 @@ class TestHTTPUtility:
         assert Authorization.from_header("") is None
         assert Authorization.from_header(None) is None
         assert Authorization.from_header("foo").type == "foo"
+
+    def test_authorization_ignore_invalid_parameters(self):
+        a = Authorization.from_header("Digest foo, bar=, =qux, =")
+        assert a.to_header() == 'Digest foo, bar=""'
 
     def test_authorization_token_padding(self):
         # padded with =
@@ -361,8 +372,8 @@ class TestHTTPUtility:
             ('v;a="b\\"c";d=e', {"a": 'b"c', "d": "e"}),
             # HTTP headers use \\ for internal \
             ('v;a="c:\\\\"', {"a": "c:\\"}),
-            # Invalid trailing slash in quoted part is left as-is.
-            ('v;a="c:\\"', {"a": "c:\\"}),
+            # Part with invalid trailing slash is discarded.
+            ('v;a="c:\\"', {}),
             ('v;a="b\\\\\\"c"', {"a": 'b\\"c'}),
             # multipart form data uses %22 for internal "
             ('v;a="b%22c"', {"a": 'b"c'}),
@@ -377,6 +388,8 @@ class TestHTTPUtility:
             ("v;a*0=b;a*1=c;d=e", {"a": "bc", "d": "e"}),
             ("v;a*0*=b", {"a": "b"}),
             ("v;a*0*=UTF-8''b;a*1=c;a*2*=%C2%B5", {"a": "bcµ"}),
+            # Long invalid quoted string with trailing slashes does not freeze.
+            ('v;a="' + "\\" * 400, {}),
         ],
     )
     def test_parse_options_header(self, value, expect) -> None:
@@ -575,6 +588,14 @@ class TestHTTPUtility:
     def test_cookie_samesite_invalid(self):
         with pytest.raises(ValueError):
             http.dump_cookie("foo", "bar", samesite="invalid")
+
+    def test_cookie_partitioned(self):
+        value = http.dump_cookie("foo", "bar", partitioned=True, secure=True)
+        assert value == "foo=bar; Secure; Path=/; Partitioned"
+
+    def test_cookie_partitioned_sets_secure(self):
+        value = http.dump_cookie("foo", "bar", partitioned=True, secure=False)
+        assert value == "foo=bar; Secure; Path=/; Partitioned"
 
 
 class TestRange:

@@ -95,6 +95,7 @@ def test_merge_slashes_match():
             r.Rule("/yes/tail/", endpoint="yes_tail"),
             r.Rule("/with/<path:path>", endpoint="with_path"),
             r.Rule("/no//merge", endpoint="no_merge", merge_slashes=False),
+            r.Rule("/no/merging", endpoint="no_merging", merge_slashes=False),
         ]
     )
     adapter = url_map.bind("localhost", "/")
@@ -123,6 +124,9 @@ def test_merge_slashes_match():
     assert rv["path"] == "x//y"
 
     assert adapter.match("/no//merge")[0] == "no_merge"
+
+    assert adapter.match("/no/merging")[0] == "no_merging"
+    pytest.raises(NotFound, lambda: adapter.match("/no//merging"))
 
 
 @pytest.mark.parametrize(
@@ -791,7 +795,7 @@ def test_nested_regex_groups():
             self.regex = items[0]
 
     # This is a regex pattern with nested groups
-    DATE_PATTERN = r"((\d{8}T\d{6}([.,]\d{1,3})?)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([.,]\d{1,3})?))Z"  # noqa: B950
+    DATE_PATTERN = r"((\d{8}T\d{6}([.,]\d{1,3})?)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([.,]\d{1,3})?))Z"  # noqa: E501
 
     map = r.Map(
         [
@@ -1071,6 +1075,9 @@ def test_converter_parser():
 
     args, kwargs = r.parse_converter_args('"foo", "bar"')
     assert args == ("foo", "bar")
+
+    with pytest.raises(ValueError):
+        r.parse_converter_args("min=0;max=500")
 
 
 def test_alias_redirects():

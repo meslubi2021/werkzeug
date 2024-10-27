@@ -32,6 +32,10 @@ class _CacheControl(UpdateDictMixin, dict):
     to subclass it and add your own items have a look at the sourcecode for
     that class.
 
+    .. versionchanged:: 3.1
+
+       ``no_transform`` is a boolean when present.
+
     .. versionchanged:: 2.1.0
         Setting int properties such as ``max_age`` will convert the
         value to an int.
@@ -58,7 +62,7 @@ class _CacheControl(UpdateDictMixin, dict):
     no_cache = cache_control_property("no-cache", "*", None)
     no_store = cache_control_property("no-store", None, bool)
     max_age = cache_control_property("max-age", -1, int)
-    no_transform = cache_control_property("no-transform", None, None)
+    no_transform = cache_control_property("no-transform", None, bool)
 
     def __init__(self, values=(), on_update=None):
         dict.__init__(self, values or ())
@@ -127,6 +131,12 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
     you plan to subclass it and add your own items have a look at the sourcecode
     for that class.
 
+    .. versionchanged:: 3.1
+       ``no_transform`` is a boolean when present.
+
+    .. versionchanged:: 3.1
+       ``min_fresh`` is ``None`` if a value is not provided for the attribute.
+
     .. versionchanged:: 2.1.0
         Setting int properties such as ``max_age`` will convert the
         value to an int.
@@ -137,7 +147,7 @@ class RequestCacheControl(ImmutableDictMixin, _CacheControl):
     """
 
     max_stale = cache_control_property("max-stale", "*", int)
-    min_fresh = cache_control_property("min-fresh", "*", int)
+    min_fresh = cache_control_property("min-fresh", None, int)
     only_if_cached = cache_control_property("only-if-cached", None, bool)
 
 
@@ -150,6 +160,13 @@ class ResponseCacheControl(_CacheControl):
     convert the object into a string or call the :meth:`to_header` method.  If
     you plan to subclass it and add your own items have a look at the sourcecode
     for that class.
+
+    .. versionchanged:: 3.1
+       ``no_transform`` is a boolean when present.
+
+    .. versionchanged:: 3.1
+        Added the ``must_understand``, ``stale_while_revalidate``, and
+        ``stale_if_error`` attributes.
 
     .. versionchanged:: 2.1.1
         ``s_maxage`` converts the value to an int.
@@ -169,6 +186,9 @@ class ResponseCacheControl(_CacheControl):
     proxy_revalidate = cache_control_property("proxy-revalidate", None, bool)
     s_maxage = cache_control_property("s-maxage", None, int)
     immutable = cache_control_property("immutable", None, bool)
+    must_understand = cache_control_property("must-understand", None, bool)
+    stale_while_revalidate = cache_control_property("stale-while-revalidate", None, int)
+    stale_if_error = cache_control_property("stale-if-error", None, int)
 
 
 # circular dependencies
