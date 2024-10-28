@@ -59,11 +59,3 @@ $ python -m app
 ```
 
 
-## Donate
-
-The Pallets organization develops and supports Werkzeug and other
-popular packages. In order to grow the community of contributors and
-users, and allow the maintainers to devote more time to the projects,
-[please donate today][].
-
-[please donate today]: https://palletsprojects.com/donate
