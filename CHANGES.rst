@@ -5,6 +5,11 @@ Version 3.1.0
 
 Unreleased
 
+-   Drop support for Python 3.8. :pr:`2966`
+-   Remove previously deprecated code. :pr:`2967`
+-   ``Request.max_form_memory_size`` defaults to 500kB instead of unlimited.
+    Non-file form fields over this size will cause a ``RequestEntityTooLarge``
+    error. :issue:`2964`
 -  Support Cookie CHIPS (Partitioned Cookies). :issue:`2797`
 -   ``CacheControl.no_transform`` is a boolean when present. ``min_fresh`` is
     ``None`` when not present. Added the ``must_understand`` attribute. Fixed
@@ -12,6 +17,8 @@ Unreleased
 -   Add ``stale_while_revalidate`` and ``stale_if_error`` properties to
     ``ResponseCacheControl``. :issue:`2948`
 -   Add 421 ``MisdirectedRequest`` HTTP exception. :issue:`2850`
+-   Increase default work factor for PBKDF2 to 1,000,000 iterations. :issue:`2969`
+
 
 
 Version 3.0.6
